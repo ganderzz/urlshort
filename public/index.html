@@ -1,0 +1,101 @@
+<html>
+  <head>
+    <title>URL Shortener</title>
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        font-size: 10px;
+      }
+
+      body { font-size: 1.4rem; }
+
+      h3 {
+        margin: 0 0 0.2rem 0;
+        font-size: 1.8rem;
+      }
+
+      .main__container {
+        width: 80vw;
+        margin: 4rem auto;
+        box-shadow: 0 3px 10px rgba(50, 50, 50, 0.1);
+        padding: 1.2rem;
+      }
+
+      #url-input {
+        width: 80%;
+        padding: 5px;
+      }
+
+      #url-button {
+        padding: 8px;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border: 1px solid #DDD;
+        background: #F1F1F1;
+        box-shadow: 0 2px 6px rgba(100, 100, 100, 0.1);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      #url-button:hover {
+        background: #DDD;
+      }
+
+      #output-input {
+        width: 80%;
+        font-size: 2.5rem;
+        border: 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main__container">
+      <h3>URL Shortener:</h3>
+
+      <input type="text" id="url-input" />
+      <button type="button" id="url-button">Shorten</button>
+      
+      <div style="margin: 20px auto 20px auto; text-align: center;">
+        <button type="button" id="copy">Copy</button>
+        <input type="text" id="output-input" />
+      </div>
+    </div>
+
+    <script>
+      window.onload = function() {
+        var submitButton = document.querySelector("#url-button");
+        var submitInput = document.querySelector("#url-input");
+        var outputInput = document.querySelector("#output-input");
+        var copyButton = document.querySelector("#copy");
+
+        copyButton.onclick = function() {
+          outputInput.select();
+          document.execCommand("copy");
+        }
+
+        submitButton.onclick = function() {
+          fetch("/api/shorten?url="+encodeURIComponent(submitInput.value), {
+            method: "GET",
+            headers:{
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            }
+          }).then(function(response) {
+            if (response.ok) {
+              return response.json();
+            }
+
+            return Promise.reject(response);
+          }).then(function(response) {
+            outputInput.value = "http://localhost:8080" + response.Url;
+          });
+        };
+      }
+    </script>
+  </body>
+</html>
