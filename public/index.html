@@ -1,6 +1,9 @@
 <html>
   <head>
+    <meta charset="utf-8">
+      
     <title>URL Shortener</title>
+    <script src="https://unpkg.com/stimulus/dist/stimulus.umd.js"></script>
 
     <style>
       html,
@@ -24,12 +27,12 @@
         padding: 1.2rem;
       }
 
-      #url-input {
+      input {
         width: 80%;
         padding: 5px;
       }
 
-      #url-button {
+      button {
         padding: 8px;
         margin: 0;
         font-size: 1.2rem;
@@ -41,7 +44,7 @@
         transition: background 0.2s;
       }
 
-      #url-button:hover {
+      button:hover {
         background: #DDD;
       }
 
@@ -54,48 +57,71 @@
     </style>
   </head>
   <body>
-    <div class="main__container">
+    <div class="main__container" data-controller="url">
       <h3>URL Shortener:</h3>
 
-      <input type="text" id="url-input" />
-      <button type="button" id="url-button">Shorten</button>
+      <input type="text" data-target="url.text" />
+      <button type="button" data-action="click->url#submit">Submit</button>
       
       <div style="margin: 20px auto 20px auto; text-align: center;">
-        <button type="button" id="copy">Copy</button>
-        <input type="text" id="output-input" />
+        <button type="button" data-action="click->url#copy">Copy</button>
+        <input type="text" id="output-input" data-target="url.result" readonly />
       </div>
     </div>
 
     <script>
       window.onload = function() {
-        var submitButton = document.querySelector("#url-button");
-        var submitInput = document.querySelector("#url-input");
-        var outputInput = document.querySelector("#output-input");
-        var copyButton = document.querySelector("#copy");
+        function handleResponse(response) {
+          if (response.ok) {
+            return response.json();
+          }
 
-        copyButton.onclick = function() {
-          outputInput.select();
-          document.execCommand("copy");
+          return Promise.reject(response);
         }
 
-        submitButton.onclick = function() {
-          fetch("/api/shorten?url="+encodeURIComponent(submitInput.value), {
-            method: "GET",
-            headers:{
-              "Content-Type": "application/json",
-              "Accept": "application/json"
+        (() => {
+          const application = Stimulus.Application.start()
+    
+          application.register("url", class extends Stimulus.Controller {
+            static get targets() {
+              return [ "text", "result" ]
             }
-          }).then(function(response) {
-            if (response.ok) {
-              return response.json();
+    
+            get url() {
+              return this.textTarget.value;
             }
-
-            return Promise.reject(response);
-          }).then(function(response) {
-            outputInput.value = "http://localhost:8080" + response.Url;
-          });
-        };
+    
+            get result() {
+              return this.resultTarget.value;
+            }
+    
+            set result(val) {
+              this.resultTarget.value = val;
+            }
+    
+            copy() {
+              this.resultTarget.select();
+              document.execCommand("copy");
+            }
+    
+            submit() {
+              var that = this;
+    
+              fetch("/api/shorten?url="+encodeURIComponent(this.url), {
+                method: "GET",
+                headers:{
+                  "Content-Type": "application/json",
+                  "Accept": "application/json"
+                }
+              })
+              .then(handleResponse)
+              .then(function(response) {
+                that.result = "http://localhost:8080" + response.Url;
+              });
+            }
+          })
+        })();
       }
-    </script>
+        </script>
   </body>
 </html>
